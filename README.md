@@ -1,0 +1,33 @@
+# FutureLife
+
+Nueva aplicación para el catálogo público y la gestión comercial de FutureLife.
+
+## Estado
+
+El proyecto se encuentra en la Etapa 0 — Preparación. La funcionalidad de negocio no comenzará hasta completar y aprobar la Etapa 1 — Requisitos y alcance.
+
+## Base técnica prevista
+
+- Next.js con App Router
+- TypeScript en modo estricto
+- Supabase para backend, PostgreSQL, autenticación y almacenamiento
+- Vercel para el despliegue inicial
+
+## Comandos
+
+Instalar dependencias con `pnpm install` y usar:
+
+- `pnpm dev` para desarrollo
+- `pnpm lint` para revisar el código
+- `pnpm format:check` para verificar el formato
+- `pnpm test` para ejecutar pruebas
+- `pnpm build` para validar la compilación
+
+## Reglas de trabajo
+
+- No agregar funcionalidades de negocio sin requisito y criterio de aceptación aprobados.
+- No guardar secretos en el repositorio.
+- No crear o modificar el esquema de datos fuera de migraciones versionadas.
+- Mantener cambios pequeños, verificables y relacionados con la etapa actual.
+
+El contexto y el plan completo están en `FUTURELIFE_NUEVA_APP_PLAN.md`.
