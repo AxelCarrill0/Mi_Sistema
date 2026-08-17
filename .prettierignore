@@ -1,4 +1,6 @@
-node_modules
 .next
+node_modules
 coverage
+supabase/.temp
 pnpm-lock.yaml
+src/lib/supabase/database.types.ts

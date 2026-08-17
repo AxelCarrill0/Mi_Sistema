@@ -6,9 +6,11 @@ const filename = fileURLToPath(import.meta.url);
 const directory = dirname(filename);
 const compat = new FlatCompat({ baseDirectory: directory });
 
-export default [
+const configuracion = [
   ...compat.extends("next/core-web-vitals", "next/typescript"),
   {
-    ignores: [".next/**", "node_modules/**", "coverage/**"],
+    ignores: [".next/**", "node_modules/**", "coverage/**", "supabase/.temp/**", "next-env.d.ts"],
   },
 ];
+
+export default configuracion;

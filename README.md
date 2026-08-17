@@ -4,7 +4,7 @@ Nueva aplicación para el catálogo público y la gestión comercial de FutureLi
 
 ## Estado
 
-El proyecto se encuentra en la Etapa 0 — Preparación. La funcionalidad de negocio no comenzará hasta completar y aprobar la Etapa 1 — Requisitos y alcance.
+El proyecto completó la Etapa 7 — MVP de panel administrativo. El catálogo público y el panel están implementados; actualmente se mantienen ajustes visuales y responsive. El siguiente paso funcional definido en el plan es la Etapa 8 — Gestión comercial.
 
 ## Base técnica prevista
 
@@ -22,6 +22,14 @@ Instalar dependencias con `pnpm install` y usar:
 - `pnpm format:check` para verificar el formato
 - `pnpm test` para ejecutar pruebas
 - `pnpm build` para validar la compilación
+
+## Variables de entorno
+
+- `NEXT_PUBLIC_SUPABASE_URL` — URL del proyecto de Supabase.
+- `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` — clave pública (publishable) de Supabase.
+- `WHATSAPP_NUMERO` — número de WhatsApp para el botón de cotización (solo dígitos, formato internacional). Mientras la tabla `configuracion_whatsapp` no exista, el botón usa esta variable; si no está definida, el botón no se muestra.
+
+Copia `.env.example` a `.env.local` y completa los valores. Los archivos `.env*` locales no se suben al repositorio.
 
 ## Reglas de trabajo
 

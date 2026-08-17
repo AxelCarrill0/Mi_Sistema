@@ -1,10 +1,21 @@
 import type { Metadata } from "next";
+import { Manrope } from "next/font/google";
 
 import "./globals.css";
+import MarcoPublico from "@/components/publicos/MarcoPublico";
+
+const manrope = Manrope({
+  subsets: ["latin"],
+  variable: "--font-manrope",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
-  title: "FutureLife",
-  description: "Catálogo y gestión comercial de FutureLife.",
+  title: {
+    default: "FutureLife",
+    template: "%s | FutureLife",
+  },
+  description: "Catálogo de artículos de madera y decoración.",
 };
 
 export default function RootLayout({
@@ -14,7 +25,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es">
-      <body>{children}</body>
+      <body className={manrope.variable}>
+        <MarcoPublico>{children}</MarcoPublico>
+      </body>
     </html>
   );
 }
