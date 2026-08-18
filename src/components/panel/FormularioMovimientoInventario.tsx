@@ -64,9 +64,8 @@ export default function FormularioMovimientoInventario({ productos }: Props) {
             className="formulario__entrada"
             type="number"
             name="cantidad"
-            min="1"
             step="1"
-            placeholder="Ej: 10"
+            placeholder="Ej: 10 o -3 para un ajuste"
             required
           />
           {estado.errores?.cantidad && (
@@ -74,6 +73,11 @@ export default function FormularioMovimientoInventario({ productos }: Props) {
           )}
         </label>
       </div>
+
+      <p className="formulario__ayuda">
+        Entrada y salida usan cantidades positivas. En un ajuste, usa un número negativo para
+        disminuir existencias.
+      </p>
 
       <label className="formulario__campo">
         <span className="formulario__etiqueta">Notas</span>

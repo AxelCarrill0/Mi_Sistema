@@ -617,6 +617,8 @@ Probar roles, RLS, formularios, operaciones simultáneas de inventario, estados,
 
 **Salida:** no hay fallos bloqueantes ni accesos indebidos conocidos.
 
+**Avance de la etapa:** se aplicaron las migraciones `etapa_10_seguridad_inventario`, `etapa_10_politicas_configuracion` y `etapa_10_indices_claves_foraneas`; se corrigieron inconsistencias de pagos, validaciones de inventario y auditoría; las 19 tablas públicas remotas tienen RLS; y Vitest pasa con 21 pruebas. La matriz manual de roles, concurrencia, navegador, móvil, accesibilidad y rendimiento queda documentada en `ETAPA_10_CALIDAD.md` antes de marcar la etapa como completada.
+
 ### Etapa 11 — Despliegue y operación
 
 Crear entorno de producción, configurar variables, dominio, administrador real, respaldo, monitoreo, carga de productos reales y guía de operación.
@@ -669,7 +671,7 @@ Para cada etapa, la IA debe:
 
 ## 12. Próximo paso exacto
 
-Las etapas 0 a 9 han sido completadas con éxito. El siguiente trabajo funcional es comenzar la **Etapa 10 — Calidad, pruebas y seguridad final**:
+Las etapas 0 a 9 han sido completadas con éxito. La **Etapa 10 — Calidad, pruebas y seguridad final** está en curso:
 
 - Probar roles y permisos (administrador y operador), RLS y acceso a tablas privadas.
 - Probar formularios, operaciones simultáneas de inventario, estados de pedidos y producción.

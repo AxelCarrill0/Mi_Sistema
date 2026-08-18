@@ -36,6 +36,9 @@ export async function registrarAbono(
   formData: FormData,
 ): Promise<EstadoFormularioPago> {
   const cliente = await clienteAutorizado();
+  const {
+    data: { user },
+  } = await cliente.auth.getUser();
   const errores: Record<string, string> = {};
 
   const pedidoId = obtenerTextoOpcional(formData, "pedido_id");
@@ -61,6 +64,10 @@ export async function registrarAbono(
     errores.formulario = "Se requiere un pedido o venta al que asociar el abono.";
   }
 
+  if (pedidoIdValido && ventaIdValido) {
+    errores.formulario = "El abono debe asociarse a un pedido o a una venta, no a ambos.";
+  }
+
   if (Object.keys(errores).length > 0) {
     return { errores };
   }
@@ -72,6 +79,7 @@ export async function registrarAbono(
     metodo_pago: metodoPagoTexto as MetodoPago,
     referencia,
     notas,
+    perfil_id: user?.id ?? null,
   });
 
   if (error) {

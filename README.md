@@ -4,7 +4,7 @@ Nueva aplicación para el catálogo público y la gestión comercial de FutureLi
 
 ## Estado
 
-El proyecto completó la Etapa 7 — MVP de panel administrativo. El catálogo público y el panel están implementados; actualmente se mantienen ajustes visuales y responsive. El siguiente paso funcional definido en el plan es la Etapa 8 — Gestión comercial.
+Las etapas 0 a 9 están implementadas. La Etapa 10 — calidad, pruebas y seguridad final — está en curso; el avance y la matriz de verificación están documentados en `ETAPA_10_CALIDAD.md`.
 
 ## Base técnica prevista
 
