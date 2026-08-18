@@ -31,6 +31,15 @@ const gruposNavegacion = [
     enlaces: [
       { href: "/panel/clientes", etiqueta: "Clientes" },
       { href: "/panel/cotizaciones", etiqueta: "Cotizaciones" },
+      { href: "/panel/pedidos", etiqueta: "Pedidos" },
+      { href: "/panel/ventas", etiqueta: "Ventas" },
+    ],
+  },
+  {
+    etiqueta: "Operación",
+    enlaces: [
+      { href: "/panel/inventario", etiqueta: "Inventario" },
+      { href: "/panel/reportes", etiqueta: "Reportes" },
     ],
   },
   {

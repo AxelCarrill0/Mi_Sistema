@@ -20,6 +20,7 @@ export async function guardarConfiguracion(
   const mostrarPreciosPublicos = formData.get("mostrar_precios_publicos") === "on";
   const numeroTexto = String(formData.get("numero_whatsapp") ?? "").trim();
   const mensajePredeterminado = String(formData.get("mensaje_predeterminado") ?? "").trim();
+  const umbralTexto = String(formData.get("umbral_stock_bajo") ?? "").trim();
   const errores: Record<string, string> = {};
 
   if (!nombreNegocio) {
@@ -39,6 +40,11 @@ export async function guardarConfiguracion(
     errores.mensaje_predeterminado = "El mensaje no puede superar 500 caracteres.";
   }
 
+  const umbralStockBajo = Number(umbralTexto);
+  if (!Number.isInteger(umbralStockBajo) || umbralStockBajo < 0) {
+    errores.umbral_stock_bajo = "El umbral debe ser un número entero mayor o igual a 0.";
+  }
+
   if (Object.keys(errores).length > 0) {
     return { errores };
   }
@@ -48,6 +54,7 @@ export async function guardarConfiguracion(
     .update({
       nombre_negocio: nombreNegocio,
       mostrar_precios_publicos: mostrarPreciosPublicos,
+      umbral_stock_bajo: umbralStockBajo,
     })
     .eq("id", 1);
 

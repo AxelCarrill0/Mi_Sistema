@@ -12,9 +12,7 @@ create table if not exists public.clientes (
   creado_en timestamptz not null default now(),
   actualizado_en timestamptz not null default now()
 );
-
 create sequence if not exists public.cotizaciones_numero_seq;
-
 create table if not exists public.cotizaciones (
   id uuid primary key default gen_random_uuid(),
   numero integer not null default nextval('public.cotizaciones_numero_seq') unique,
@@ -29,7 +27,6 @@ create table if not exists public.cotizaciones (
   creado_en timestamptz not null default now(),
   actualizado_en timestamptz not null default now()
 );
-
 create table if not exists public.cotizaciones_detalle (
   id uuid primary key default gen_random_uuid(),
   cotizacion_id uuid not null references public.cotizaciones(id) on delete cascade,
@@ -39,15 +36,12 @@ create table if not exists public.cotizaciones_detalle (
   precio_unitario numeric(12, 2) not null check (precio_unitario >= 0),
   creado_en timestamptz not null default now()
 );
-
 create index if not exists clientes_nombres_idx on public.clientes (nombres);
 create index if not exists cotizaciones_creado_en_idx on public.cotizaciones (creado_en desc);
 create index if not exists cotizaciones_detalle_cotizacion_id_idx on public.cotizaciones_detalle (cotizacion_id);
-
 alter table public.clientes enable row level security;
 alter table public.cotizaciones enable row level security;
 alter table public.cotizaciones_detalle enable row level security;
-
 create policy clientes_gestion_interna on public.clientes
   for all to authenticated using (private.usuario_es_administrador())
   with check (private.usuario_es_administrador());
@@ -57,7 +51,6 @@ create policy cotizaciones_gestion_interna on public.cotizaciones
 create policy cotizaciones_detalle_gestion_interna on public.cotizaciones_detalle
   for all to authenticated using (private.usuario_es_administrador())
   with check (private.usuario_es_administrador());
-
 drop trigger if exists clientes_actualizar_actualizado_en on public.clientes;
 create trigger clientes_actualizar_actualizado_en
   before update on public.clientes for each row

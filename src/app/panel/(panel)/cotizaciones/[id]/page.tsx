@@ -46,7 +46,15 @@ export default async function DetalleCotizacionPage({ params }: Props) {
           <Link href="/panel/cotizaciones" className="boton boton--secundario">
             Volver
           </Link>
-          <BotonImprimir />
+          <Link
+            href={`/panel/pedidos/nuevo?cotizacion_id=${cotizacion.id}`}
+            className="boton boton--primario"
+          >
+            + Generar Pedido
+          </Link>
+          <BotonImprimir
+            nombreArchivo={`Cotizacion-${formatearNumeroCotizacion(cotizacion.numero)}`}
+          />
           <form action={cambiarEstadoCotizacion}>
             <input type="hidden" name="id" value={cotizacion.id} />
             <select className="formulario__entrada" name="estado" defaultValue={cotizacion.estado}>

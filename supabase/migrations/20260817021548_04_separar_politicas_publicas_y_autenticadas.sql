@@ -1,3 +1,4 @@
+
 drop policy if exists colecciones_lectura_publica_o_interna on public.colecciones;
 create policy colecciones_lectura_publica on public.colecciones for select to anon using (estado_publicacion = 'activo');
 create policy colecciones_lectura_autenticada on public.colecciones for select to authenticated using (estado_publicacion = 'activo' or (select private.usuario_es_administrador()));
@@ -11,5 +12,21 @@ create policy productos_lectura_publica on public.productos for select to anon u
 create policy productos_lectura_autenticada on public.productos for select to authenticated using (estado_publicacion = 'activo' or (select private.usuario_es_administrador()));
 
 drop policy if exists imagenes_lectura_publica_o_interna on public.imagenes_producto;
-create policy imagenes_lectura_publica on public.imagenes_producto for select to anon using (exists (select 1 from public.productos where productos.id = imagenes_producto.producto_id and productos.estado_publicacion = 'activo'));
-create policy imagenes_lectura_autenticada on public.imagenes_producto for select to authenticated using (exists (select 1 from public.productos where productos.id = imagenes_producto.producto_id and (productos.estado_publicacion = 'activo' or (select private.usuario_es_administrador()))));
+create policy imagenes_lectura_publica on public.imagenes_producto for select to anon using (
+  exists (
+    select 1 from public.productos
+    where productos.id = imagenes_producto.producto_id
+      and productos.estado_publicacion = 'activo'
+  )
+);
+create policy imagenes_lectura_autenticada on public.imagenes_producto for select to authenticated using (
+  exists (
+    select 1 from public.productos
+    where productos.id = imagenes_producto.producto_id
+      and (
+        productos.estado_publicacion = 'activo'
+        or (select private.usuario_es_administrador())
+      )
+  )
+);
+;

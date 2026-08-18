@@ -2,7 +2,6 @@ insert into public.colecciones (nombre, slug, descripcion, estado_publicacion) v
   ('Línea Raíces', 'linea-raices', 'Piezas que realzan la calidez de la madera natural para decorar el hogar.', 'activo'),
   ('Línea Hogar', 'linea-hogar', 'Muebles funcionales y duraderos para el día a día.', 'activo')
 on conflict (slug) do nothing;
-
 insert into public.categorias (nombre, slug, descripcion, activo) values
   ('Repisas', 'repisas', 'Repisas de madera para decorar y aprovechar los espacios.', true),
   ('Canastas', 'canastas', 'Canastas de fibra y madera para almacenamiento decorativo.', true),
@@ -14,7 +13,6 @@ insert into public.categorias (nombre, slug, descripcion, activo) values
   ('Vinil', 'vinil', 'Vinil decorativo para interiores y letreros.', true),
   ('Otros', 'otros', 'Otros productos y trabajos artesanales en madera.', true)
 on conflict (slug) do nothing;
-
 insert into public.productos (
   codigo_interno, nombre, slug, descripcion,
   coleccion_id, categoria_id,

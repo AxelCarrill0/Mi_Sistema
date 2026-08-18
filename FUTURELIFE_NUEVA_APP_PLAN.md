@@ -496,11 +496,120 @@ Implementar productos personalizados, pedidos, historial de estados, registro op
 
 **Salida:** se puede registrar el ciclo comercial completo.
 
+#### Subdivisión aprobada
+
+- **8.1** — Diseño funcional y modelo de datos.
+- **8.2** — Migración 08: `pedidos`, `detalles_pedido`, `historial_estados_pedido`, `pagos`, `ventas`, `detalles_venta` + RLS administrativa + secuencias + funciones atómicas.
+- **8.3** — Pedidos en el panel: crear (desde cotización aceptada o en blanco), listar y ver detalle.
+- **8.4** — Historial de estados: transiciones con registro de responsable y fecha.
+- **8.5** — Abonos opcionales: registro manual de abono y cálculo de saldo en pedido y venta.
+- **8.6** — Ventas: módulo CRUD propio + conversión automática de pedido entregado a venta (transacción atómica).
+- **8.7** — Documentación de facturación: verificación de requisitos de Ecuador y documento imprimible de venta.
+
+#### Decisiones de diseño (8.1)
+
+Estados de pedido simplificados (aprobado):
+
+```text
+pendiente → entregado / cancelado
+```
+
+- Al pasar un pedido a `entregado`, se genera automáticamente la venta (transacción atómica en BD, función `public.convertir_pedido_en_venta`), que también descuenta el stock de los productos que controlan inventario y traslada los abonos registrados del pedido a la venta.
+- Al pasar a `cancelado`, no se genera venta.
+- Cada transición de estado queda registrada en `historial_estados_pedido` (estado anterior, estado nuevo, responsable y fecha).
+
+Ventas (aprobado), dos formas:
+
+1. Automática: un pedido `entregado` genera la venta.
+2. Manual: módulo propio de Ventas en el panel (crear, listar, ver y editar) con líneas dinámicas; el registro de una venta manual descuenta stock de forma atómica vía `public.registrar_venta`.
+
+Reglas:
+
+- Los precios se guardan como valores históricos en las líneas (independientes del precio actual del producto).
+- Los abonos son opcionales, se registran manualmente y no se solicitan desde el sitio público; quedan en `pagos` (referencia a pedido o venta). Saldo = total − abonos.
+- Las líneas de una venta no se editan después de creada para no dejar inventario inconsistente; la edición de venta cubre datos del cliente, observaciones y abonos.
+- Productos personalizados: el tipo `personalizado` ya existe en `productos` (Etapa 7.4) y se maneja con línea de descripción libre en pedidos y ventas.
+- Los movimientos de inventario formalizados (`movimientos_inventario`) y la UI de inventario se implementan en la Etapa 9; en la Etapa 8 el descuento atómico actúa directo sobre `productos.stock_actual`.
+
+Modelo de datos (8.1):
+
+```text
+cotizaciones      1 ──── N detalles_cotizacion      (existente)
+pedidos           1 ──── N detalles_pedido
+pedidos           1 ──── N historial_estados_pedido
+pedidos           0..1 ── 1 ventas                  (pedido_id único en ventas)
+ventas            1 ──── N detalles_venta
+pedidos/ventas    1 ──── N pagos                    (abonos opcionales)
+```
+
+**Etapa 8 completada (8.1–8.7).**
+
+- **8.1** Diseño funcional y modelo de datos aprobado.
+- **8.2** Migración `20260817150000_08_gestion_comercial_pedidos_y_ventas.sql` aplicada en Supabase remoto y sincronizada localmente; tipos TypeScript generados.
+- **8.3** Módulo de Pedidos en panel (`/panel/pedidos`): listado con filtros por estado, creación (en blanco o precargando cotización `?cotizacion_id=...`), y vista detallada.
+- **8.4** Historial de estados de pedidos (`historial_estados_pedido`): transiciones con registro de usuario responsable, fecha y motivo; modal interactivo con validación de stock y advertencia de conversión.
+- **8.5** Abonos opcionales (`pagos`): componente reusable `SeccionAbonos`, registro de abono con método de pago y referencia, y cálculo en tiempo real de saldo pendiente en pedidos y ventas.
+- **8.6** Módulo de Ventas en panel (`/panel/ventas`): conversión atómica de pedidos entregados a ventas vía `public.convertir_pedido_en_venta` con descuento de stock, registro de venta directa en mostrador vía `public.registrar_venta_directa`, y métricas comerciales integradas en el resumen del panel.
+- **8.7** Facturación para Ecuador: componente `DocumentoVenta` con formato fiscal/comercial, datos de cliente (RUC/Cédula, dirección, teléfono), desglose de ítems, subtotal, IVA, total en USD,`@media print`.
+
 ### Etapa 9 — Inventario y reportes
 
 Implementar movimientos de stock, descuento de inventario al registrar la venta, alertas de stock bajo, producción y únicamente los reportes básicos necesarios para la operación.
 
 **Salida:** el panel refleja la operación real del negocio.
+
+#### Subdivisión aprobada
+
+- **9.1** — Diseño funcional y modelo de datos.
+- **9.2** — Migración 10: `movimientos_inventario`, `producciones`, `historial_estados_produccion` + RLS administrativa + secuencias + funciones atómicas.
+- **9.3** — Movimientos de inventario: registrar entrada/salida/ajuste (función atómica) y registrar movimientos en los descuentos de venta existentes (`convertir_pedido_en_venta`, `registrar_venta_directa`).
+- **9.4** — Producción: órdenes de producción en el panel (crear, listar, detalle e historial); al completar entra stock.
+- **9.5** — Alertas de stock bajo: umbral configurable y listado.
+- **9.6** — Reportes básicos: ventas por período y top de productos vendidos.
+
+#### Decisiones de diseño (9.1)
+
+Estados de producción simplificados (aprobado):
+
+```text
+activa → completada / cancelada
+```
+
+- Una orden de producción activa fabrica `cantidad` unidades de un producto.
+- Al completar la orden, el stock del producto se incrementa de forma atómica y se registra un movimiento de tipo `produccion`.
+- Cancelar la orden no modifica el stock.
+- Cada transición queda en `historial_estados_produccion` (estado anterior, nuevo, responsable y fecha).
+
+Movimientos de inventario:
+
+- Tipos: `entrada`, `salida`, `ajuste` y `produccion`.
+- El movimiento registra producto, cantidad con signo (negativa reduce stock), stock resultante, origen (`venta`, `pedido`, `produccion`, `manual`), referencias opcionales (venta/pedido/producción), responsable y fecha.
+- Toda modificación de stock pasa por la función atómica `public.registrar_movimiento_inventario`, que valida que el producto controle stock y que el stock resultante no sea negativo.
+- Las funciones de venta existentes se amplían para insertar un movimiento de `salida` por línea que descuenta stock.
+- Un producto con `controla_stock = false` no admite movimientos de inventario.
+
+Alertas de stock bajo:
+
+- Umbral configurable (`umbral_stock_bajo` en `configuracion_negocio`, valor por defecto 5), editable en Configuración.
+- Se muestran en el resumen y en la página de inventario los productos activos con stock ≤ umbral.
+
+Reportes (9.6, aprobado):
+
+- Filtro por rango de fechas.
+- Ventas por período: total de ventas, total abonado, saldo pendiente y número de ventas.
+- Top de productos más vendidos por cantidad y total en el rango.
+
+Modelo de datos (9.1):
+
+```text
+productos    1 ──── N movimientos_inventario
+productos    1 ──── N producciones
+producciones 1 ──── N historial_estados_produccion
+```
+
+Tablas nuevas: `movimientos_inventario`, `producciones`, `historial_estados_produccion`. Todas privadas (RLS solo administrativa) y versionadas por migración.
+
+**Etapa 9 completada (9.1–9.6).** Migración 10 aplicada; página unificada `/panel/inventario` con secciones Movimientos, Stock bajo y Producción (detalle y creación bajo `/panel/inventario/produccion`); `/panel/reportes`; umbral de stock bajo configurable en Configuración; movimientos de entrada/salida/ajuste por función atómica; las ventas descuentan stock con trazabilidad; completar una producción ingresa stock atómicamente. Verificada con `pnpm lint`, `pnpm format:check`, `pnpm test` y `pnpm build`.
 
 ### Etapa 10 — Calidad, pruebas y seguridad final
 
@@ -560,27 +669,9 @@ Para cada etapa, la IA debe:
 
 ## 12. Próximo paso exacto
 
-Las etapas 0 a 7 ya fueron realizadas y la Etapa 7 está marcada como completada. Después de cerrar los ajustes visuales y responsive pendientes del catálogo, el siguiente trabajo funcional es comenzar la **Etapa 8 — Gestión comercial**.
+Las etapas 0 a 9 han sido completadas con éxito. El siguiente trabajo funcional es comenzar la **Etapa 10 — Calidad, pruebas y seguridad final**:
 
-La Etapa 8 debe comenzar por una subetapa de diseño funcional y modelo de datos para:
-
-- Productos personalizados.
-- Pedidos y su historial de estados.
-- Abonos opcionales registrados manualmente.
-- Conversión segura de pedido a venta.
-- Documentación de facturación aplicable en Ecuador.
-
-No comenzar todavía la Etapa 9 de inventario y reportes; depende de definir primero la conversión de pedido a venta y el momento transaccional en que se descuenta el stock.
-
-Decisiones ya recogidas para el documento de requisitos:
-
-- Productos iniciales: repisas, canastas, cuadros, puertas, camas, mesas, armarios, vinil y otros.
-- El estado de publicación podrá cambiarse entre activo/disponible y desactivado; un producto desactivado no se mostrará públicamente.
-- El precio público será configurable y estará oculto inicialmente.
-- Los precios serán editables en todo momento.
-- WhatsApp no registrará automáticamente cotizaciones; el panel podrá generar cotizaciones profesionales cuando sea necesario.
-- Los abonos se registrarán opcionalmente en pedidos y no se solicitarán desde el sitio público.
-- El stock solo disminuirá al registrar una venta, no al registrar un pedido.
-- Las ventas deberán permitir generar la documentación de facturación aplicable en Ecuador.
-
-No crear base de datos, interfaces ni código hasta que estas respuestas estén acordadas.
+- Probar roles y permisos (administrador y operador), RLS y acceso a tablas privadas.
+- Probar formularios, operaciones simultáneas de inventario, estados de pedidos y producción.
+- Validar diseño móvil, accesibilidad, errores de red y rendimiento.
+- Revisión final de seguridad (políticas RLS, almacenamiento, secretos).
