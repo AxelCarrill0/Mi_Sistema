@@ -4,7 +4,7 @@ Nueva aplicación para el catálogo público y la gestión comercial de FutureLi
 
 ## Estado
 
-Las etapas 0 a 9 están implementadas. La Etapa 10 — calidad, pruebas y seguridad final — está en curso; el avance y la matriz de verificación están documentados en `ETAPA_10_CALIDAD.md`.
+Las etapas 0 a 10 están implementadas. La etapa siguiente es el despliegue y operación; la evidencia de calidad está documentada en `ETAPA_10_CALIDAD.md`.
 
 ## Base técnica prevista
 

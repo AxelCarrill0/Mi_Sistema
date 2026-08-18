@@ -3338,9 +3338,7 @@ h3 {
 }
 
 .inicio__hero-placeholder {
-  background:
-    linear-gradient(135deg, rgba(36, 59, 74, 0.18), transparent 56%),
-    var(--color-madera);
+  background: linear-gradient(135deg, rgba(36, 59, 74, 0.18), transparent 56%), var(--color-madera);
 }
 
 .inicio__confianza span::before {
@@ -3667,7 +3665,9 @@ h3 {
   font-size: 1rem;
   opacity: 0;
   transform: translate(-3px, 3px);
-  transition: opacity 0.18s ease, transform 0.18s ease;
+  transition:
+    opacity 0.18s ease,
+    transform 0.18s ease;
 }
 
 .resumen-tarjeta:hover .resumen-tarjeta__flecha {
