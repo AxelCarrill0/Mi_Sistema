@@ -4,7 +4,7 @@ Nueva aplicación para el catálogo público y la gestión comercial de FutureLi
 
 ## Estado
 
-Las etapas 0 a 10 están implementadas. La etapa siguiente es el despliegue y operación; la evidencia de calidad está documentada en `ETAPA_10_CALIDAD.md`.
+Las etapas 0 a 10 están implementadas y la Etapa 11 — despliegue y operación — está en preparación. La evidencia de calidad está documentada en `ETAPA_10_CALIDAD.md` y la guía de publicación en `ETAPA_11_DESPLIEGUE.md`.
 
 ## Base técnica prevista
 

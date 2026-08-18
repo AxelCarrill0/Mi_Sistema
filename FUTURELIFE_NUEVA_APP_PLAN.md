@@ -625,6 +625,8 @@ Crear entorno de producción, configurar variables, dominio, administrador real,
 
 **Salida:** sistema listo para usar y recuperar ante errores.
 
+**Avance de la etapa:** se preparó el endpoint `/api/health`, se documentaron las variables, el flujo de publicación, la verificación posterior, rollback y operación en `ETAPA_11_DESPLIEGUE.md`. Falta ejecutar la publicación en la cuenta Vercel del propietario, configurar el dominio y cargar los datos reales.
+
 ## 10. MVP y alcance futuro
 
 ### MVP obligatorio
