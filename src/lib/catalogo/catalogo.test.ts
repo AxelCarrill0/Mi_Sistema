@@ -5,6 +5,7 @@ import { obtenerEstadoDisponibilidad } from "./disponibilidad";
 import { esOrdenValido } from "./opciones";
 import {
   construirMensajeProducto,
+  construirMensajeWhatsApp,
   construirUrlWhatsApp,
   normalizarNumeroTelefono,
 } from "./whatsapp";
@@ -45,11 +46,13 @@ describe("whatsapp", () => {
   });
 
   it("usa el mensaje personalizado cuando existe", () => {
-    const mensaje = construirMensajeProducto(
+    const mensaje = construirMensajeWhatsApp(
       crearProducto({ mensaje_whatsapp: "Cotiza esta pieza especial." }),
     );
 
-    expect(mensaje).toBe("Cotiza esta pieza especial.");
+    expect(mensaje).toContain("Repisa de madera");
+    expect(mensaje).toContain("PR-001");
+    expect(mensaje).toContain("Cotiza esta pieza especial.");
   });
 
   it("codifica el mensaje en la URL de WhatsApp", () => {

@@ -1,5 +1,9 @@
 import { obtenerConfiguracionWhatsApp } from "@/lib/catalogo/configuracion";
-import { construirMensajeProducto, construirUrlWhatsApp } from "@/lib/catalogo/whatsapp";
+import {
+  construirMensajeWhatsApp,
+  construirUrlProducto,
+  construirUrlWhatsApp,
+} from "@/lib/catalogo/whatsapp";
 import type { ProductoConDetalle } from "@/lib/catalogo/tipos";
 
 interface Props {
@@ -17,10 +21,11 @@ export default async function BotonWhatsApp({
     return null;
   }
 
-  const mensaje =
-    producto.mensaje_whatsapp?.trim() ??
-    configuracion.mensajePredeterminado ??
-    construirMensajeProducto(producto);
+  const mensaje = construirMensajeWhatsApp(
+    producto,
+    configuracion.mensajePredeterminado,
+    construirUrlProducto(producto.slug),
+  );
   const url = construirUrlWhatsApp(configuracion.numero, mensaje);
 
   return (

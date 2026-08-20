@@ -7,6 +7,8 @@ import GaleriaProducto from "@/components/publicos/GaleriaProducto";
 import { obtenerProductoPublicoPorSlug } from "@/lib/catalogo/consultas";
 import { formatearPrecio, obtenerMostrarPreciosPublicos } from "@/lib/catalogo/configuracion";
 import { obtenerEstadoDisponibilidad } from "@/lib/catalogo/disponibilidad";
+import { construirUrlProducto } from "@/lib/catalogo/whatsapp";
+import { obtenerUrlPublicaImagen } from "@/lib/catalogo/imagenes";
 import { createClient } from "@/lib/supabase/server";
 
 interface Props {
@@ -117,8 +119,27 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const cliente = await createClient();
   const producto = await obtenerProductoPublicoPorSlug(cliente, slug);
+  const urlProducto = construirUrlProducto(slug);
+  const imagenPrincipal = producto?.imagenes[0];
+  const urlImagen = imagenPrincipal ? obtenerUrlPublicaImagen(imagenPrincipal.ruta_storage) : null;
 
   return {
     title: producto ? producto.nombre : "Producto no encontrado",
+    description:
+      producto?.descripcion ?? `Conoce ${producto?.nombre ?? "este producto"} en FutureLife.`,
+    alternates: {
+      canonical: urlProducto,
+    },
+    openGraph: {
+      title: producto?.nombre ?? "Producto no encontrado",
+      description: producto?.descripcion ?? "Conoce este producto en FutureLife.",
+      url: urlProducto,
+      type: "website",
+      ...(urlImagen
+        ? {
+            images: [{ url: urlImagen, alt: producto?.nombre ?? "Producto FutureLife" }],
+          }
+        : {}),
+    },
   };
 }
