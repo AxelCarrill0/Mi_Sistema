@@ -337,6 +337,16 @@ export async function crearProducto(
     errores.stock_actual = "El stock debe ser un número entero mayor o igual a 0.";
   }
 
+  const { data: existeCodigo } = await cliente
+    .from("productos")
+    .select("id")
+    .eq("codigo_interno", codigoInterno)
+    .maybeSingle();
+
+  if (existeCodigo) {
+    errores.codigo_interno = "Ya existe un producto con ese código interno.";
+  }
+
   if (Object.keys(errores).length > 0) {
     return { valores: valoresProducto(formData), errores };
   }

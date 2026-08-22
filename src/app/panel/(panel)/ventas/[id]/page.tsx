@@ -37,6 +37,7 @@ export default async function DetalleVentaPage({ params }: Props) {
     telefono_cliente: venta.telefono_cliente,
     email_cliente: venta.email_cliente,
     direccion_cliente: venta.direccion_cliente,
+    identificacion_cliente: venta.identificacion_cliente,
     observaciones: venta.observaciones,
     creado_en: venta.creado_en,
     total: venta.total,

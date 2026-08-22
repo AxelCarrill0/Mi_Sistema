@@ -28,6 +28,7 @@ Instalar dependencias con `pnpm install` y usar:
 - `NEXT_PUBLIC_SUPABASE_URL` — URL del proyecto de Supabase.
 - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` — clave pública (publishable) de Supabase.
 - `WHATSAPP_NUMERO` — número de WhatsApp para el botón de cotización (solo dígitos, formato internacional). Mientras la tabla `configuracion_whatsapp` no exista, el botón usa esta variable; si no está definida, el botón no se muestra.
+- `NEXT_PUBLIC_SITE_URL` — URL pública del sitio sin slash final (ej. `https://tudominio.com`). Se usa para URLs canónicas, Open Graph, `sitemap.xml` y enlaces de WhatsApp. Si no está definida, el origen se deduce de la petición actual.
 
 Copia `.env.example` a `.env.local` y completa los valores. Los archivos `.env*` locales no se suben al repositorio.
 

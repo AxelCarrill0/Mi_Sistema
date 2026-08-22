@@ -1,4 +1,5 @@
 import { obtenerConfiguracionWhatsApp } from "@/lib/catalogo/configuracion";
+import { obtenerOrigenActual } from "@/lib/catalogo/origen";
 import {
   construirMensajeWhatsApp,
   construirUrlProducto,
@@ -15,7 +16,10 @@ export default async function BotonWhatsApp({
   producto,
   etiqueta = "Cotizar por WhatsApp",
 }: Props) {
-  const configuracion = await obtenerConfiguracionWhatsApp();
+  const [configuracion, origen] = await Promise.all([
+    obtenerConfiguracionWhatsApp(),
+    obtenerOrigenActual(),
+  ]);
 
   if (!configuracion.numero) {
     return null;
@@ -24,7 +28,7 @@ export default async function BotonWhatsApp({
   const mensaje = construirMensajeWhatsApp(
     producto,
     configuracion.mensajePredeterminado,
-    construirUrlProducto(producto.slug),
+    construirUrlProducto(producto.slug, origen),
   );
   const url = construirUrlWhatsApp(configuracion.numero, mensaje);
 

@@ -155,7 +155,7 @@ export async function crearVentaDirecta(
   });
 
   if (errorRpc) {
-    return { errores: { formulario: `No se pudo registrar la venta: ${errorRpc.message}` } };
+    return { errores: { formulario: "No se pudo registrar la venta. Inténtalo de nuevo." } };
   }
 
   revalidatePath("/panel/ventas");

@@ -1,8 +1,16 @@
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
 import EncabezadoPanel from "@/components/panel/EncabezadoPanel";
 import { obtenerUsuarioAutorizado } from "@/lib/panel/autorizacion";
 import { createClient } from "@/lib/supabase/server";
+
+export const metadata: Metadata = {
+  robots: {
+    index: false,
+    follow: false,
+  },
+};
 
 export default async function PanelLayout({
   children,

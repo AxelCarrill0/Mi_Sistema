@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import FormularioPedido, { type CotizacionOrigen } from "@/components/panel/FormularioPedido";
 import { clienteAutorizado } from "@/lib/panel/cliente";
 import {
-  listarClientesPanel,
+  listarClientesParaSelector,
   listarProductosParaCotizar,
   obtenerCotizacionPanel,
 } from "@/lib/panel/consultas";
@@ -21,7 +21,7 @@ export default async function PaginaNuevoPedido({ searchParams }: Props) {
   const cliente = await clienteAutorizado();
 
   const [clientes, productos, cotizacionRaw] = await Promise.all([
-    listarClientesPanel(cliente),
+    listarClientesParaSelector(cliente),
     listarProductosParaCotizar(cliente),
     cotizacionId ? obtenerCotizacionPanel(cliente, cotizacionId) : null,
   ]);

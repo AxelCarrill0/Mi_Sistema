@@ -148,10 +148,12 @@ export async function crearCotizacion(
     .select("id")
     .single();
 
-  if (errorCotizacion) {
+  if (errorCotizacion || !cotizacion) {
     return { errores: { formulario: "No se pudo crear la cotización. Inténtalo de nuevo." } };
   }
 
+  // cotizaciones_detalle usa ON DELETE CASCADE sobre cotizaciones: si el
+  // detalle falla, se elimina la cotización recién creada y no queda a medias.
   const detalle = lineas.descripciones.map((descripcion, indice) => ({
     cotizacion_id: cotizacion.id,
     producto_id: lineas.productos[indice],
@@ -163,7 +165,8 @@ export async function crearCotizacion(
   const { error: errorDetalle } = await cliente.from("cotizaciones_detalle").insert(detalle);
 
   if (errorDetalle) {
-    return { errores: { formulario: "No se pudieron guardar las líneas de la cotización." } };
+    await cliente.from("cotizaciones").delete().eq("id", cotizacion.id);
+    return { errores: { formulario: "No se pudo crear la cotización. Inténtalo de nuevo." } };
   }
 
   revalidatePath("/panel/cotizaciones");

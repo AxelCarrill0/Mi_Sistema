@@ -7,6 +7,7 @@ import { clienteAutorizado } from "./cliente";
 
 const BUCKET = "catalogo";
 const TAMANO_MAXIMO = 5 * 1024 * 1024;
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const MIME_PERMITIDOS = ["image/jpeg", "image/png", "image/webp", "image/avif"] as const;
 const EXTENSIONES: Record<string, string> = {
   "image/jpeg": "jpg",
@@ -20,6 +21,10 @@ export async function subirImagenProducto(
   formData: FormData,
 ): Promise<{ error?: string }> {
   const cliente = await clienteAutorizado();
+
+  if (!UUID_REGEX.test(productoId)) {
+    return { error: "El producto indicado no es válido." };
+  }
 
   const archivo = formData.get("imagen");
 

@@ -33,13 +33,13 @@ export function construirMensajeWhatsApp(
     .join("\n");
 }
 
-export function construirUrlProducto(slug: string, origen?: string): string {
+export function construirUrlProducto(slug: string, origen?: string | null): string | null {
   const base =
-    origen?.replace(/\/$/, "") ||
-    process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ||
-    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
+    origen?.replace(/\/+$/, "") ||
+    process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/+$/, "") ||
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null);
 
-  return `${base}/productos/${encodeURIComponent(slug)}`;
+  return base ? `${base}/productos/${encodeURIComponent(slug)}` : null;
 }
 
 export function construirUrlWhatsApp(numero: string, mensaje: string): string {

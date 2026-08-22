@@ -1,15 +1,17 @@
 import type { Metadata } from "next";
 
+import Paginacion from "@/components/Paginacion";
 import FormularioFiltros from "@/components/publicos/FormularioFiltros";
 import ListaProductos from "@/components/publicos/ListaProductos";
 import {
   listarCategoriasPublicas,
   listarColeccionesPublicas,
-  listarProductosPublicos,
+  listarProductosPublicosPaginado,
   obtenerCategoriaPublicaPorSlug,
   obtenerColeccionPublicaPorSlug,
 } from "@/lib/catalogo/consultas";
 import { esOrdenValido } from "@/lib/catalogo/opciones";
+import { obtenerNumeroPagina, TAMANO_PAGINA_CATALOGO } from "@/lib/paginacion";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
@@ -30,6 +32,7 @@ export default async function CatalogoPage({ searchParams }: Props) {
   const categoriaSlug = typeof parametros.categoria === "string" ? parametros.categoria : "";
   const ordenParametro = typeof parametros.orden === "string" ? parametros.orden : undefined;
   const orden = esOrdenValido(ordenParametro) ? ordenParametro : "recientes";
+  const pagina = obtenerNumeroPagina(parametros.pagina);
 
   const cliente = await createClient();
 
@@ -43,14 +46,25 @@ export default async function CatalogoPage({ searchParams }: Props) {
   const coleccionId = coleccionSlug ? (coleccion?.id ?? UUID_INEXISTENTE) : undefined;
   const categoriaId = categoriaSlug ? (categoria?.id ?? UUID_INEXISTENTE) : undefined;
 
-  const productos = await listarProductosPublicos(cliente, {
+  const { productos, total } = await listarProductosPublicosPaginado(cliente, {
     busqueda,
     coleccionId,
     categoriaId,
     orden,
+    pagina,
   });
 
   const tieneFiltros = Boolean(busqueda || coleccionSlug || categoriaSlug);
+
+  const construirHrefPagina = (siguiente: number) => {
+    const parametrosPagina = new URLSearchParams();
+    if (busqueda) parametrosPagina.set("q", busqueda);
+    if (coleccionSlug) parametrosPagina.set("coleccion", coleccionSlug);
+    if (categoriaSlug) parametrosPagina.set("categoria", categoriaSlug);
+    if (orden !== "recientes") parametrosPagina.set("orden", orden);
+    parametrosPagina.set("pagina", String(siguiente));
+    return `/catalogo?${parametrosPagina.toString()}`;
+  };
 
   return (
     <section className="catalogo-pagina">
@@ -69,7 +83,7 @@ export default async function CatalogoPage({ searchParams }: Props) {
       <div className="catalogo-pagina__explorador">
         <div className="catalogo-pagina__explorador-cabecera">
           <span>Encuentra una pieza</span>
-          <span>{productos.length} resultados</span>
+          <span>{total} resultados</span>
         </div>
         <FormularioFiltros
           colecciones={colecciones}
@@ -85,6 +99,12 @@ export default async function CatalogoPage({ searchParams }: Props) {
       </div>
       <div className="catalogo-pagina__resultados">
         <ListaProductos productos={productos} />
+        <Paginacion
+          pagina={pagina}
+          total={total}
+          porPagina={TAMANO_PAGINA_CATALOGO}
+          construirHref={construirHrefPagina}
+        />
       </div>
     </section>
   );

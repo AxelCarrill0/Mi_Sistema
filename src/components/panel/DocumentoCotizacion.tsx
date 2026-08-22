@@ -1,6 +1,6 @@
-import { formatearPrecio } from "@/lib/catalogo/precio";
 import {
   formatearFechaCotizacion,
+  formatearMonedaUSD,
   formatearNumeroCotizacion,
   obtenerFechaVigencia,
 } from "@/lib/panel/formato";
@@ -76,10 +76,10 @@ export default function DocumentoCotizacion({ cotizacion, nombreNegocio, numeroW
               <td>{linea.descripcion}</td>
               <td className="cotizacion-documento__num">{linea.cantidad}</td>
               <td className="cotizacion-documento__num">
-                {formatearPrecio(linea.precio_unitario)}
+                {formatearMonedaUSD(linea.precio_unitario)}
               </td>
               <td className="cotizacion-documento__num">
-                {formatearPrecio(linea.precio_unitario * linea.cantidad)}
+                {formatearMonedaUSD(linea.precio_unitario * linea.cantidad)}
               </td>
             </tr>
           ))}
@@ -88,7 +88,7 @@ export default function DocumentoCotizacion({ cotizacion, nombreNegocio, numeroW
 
       <div className="cotizacion-documento__totales">
         <p>
-          Total: <strong>{formatearPrecio(cotizacion.total)}</strong>
+          Total: <strong>{formatearMonedaUSD(cotizacion.total)}</strong>
         </p>
       </div>
 

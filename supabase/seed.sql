@@ -1,0 +1,4 @@
+-- Seed local para `supabase db reset`.
+-- Los datos iniciales del catálogo viven en la migración versionada
+-- 20260817120000_05_semilla_catalogo_inicial.sql, por lo que este archivo se
+-- mantiene intencionalmente vacío.

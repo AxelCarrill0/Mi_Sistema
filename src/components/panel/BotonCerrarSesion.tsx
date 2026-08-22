@@ -11,10 +11,17 @@ export default function BotonCerrarSesion() {
 
   async function cerrarSesion() {
     setCargando(true);
-    const cliente = createClient();
-    await cliente.auth.signOut();
-    router.push("/");
-    router.refresh();
+    try {
+      const cliente = createClient();
+      const { error } = await cliente.auth.signOut();
+      if (error) {
+        throw error;
+      }
+      router.push("/");
+      router.refresh();
+    } catch {
+      setCargando(false);
+    }
   }
 
   return (

@@ -2,7 +2,7 @@
 
 import { useActionState, useState } from "react";
 
-import { formatearPrecio } from "@/lib/catalogo/precio";
+import { formatearMonedaUSD } from "@/lib/panel/formato";
 import type { EstadoFormulario } from "@/lib/panel/cotizaciones";
 
 export interface ClienteParaCotizacion {
@@ -243,7 +243,7 @@ export default function FormularioCotizacion({ accion, clientes, productos }: Pr
             />
 
             <span className="cotizacion-lineas__subtotal">
-              {formatearPrecio((Number(linea.cantidad) || 0) * (Number(linea.precio) || 0))}
+              {formatearMonedaUSD((Number(linea.cantidad) || 0) * (Number(linea.precio) || 0))}
             </span>
 
             <button
@@ -264,7 +264,7 @@ export default function FormularioCotizacion({ accion, clientes, productos }: Pr
           >
             Agregar línea
           </button>
-          <span className="cotizacion-lineas__total">Total: {formatearPrecio(total)}</span>
+          <span className="cotizacion-lineas__total">Total: {formatearMonedaUSD(total)}</span>
         </div>
 
         {estado.errores?.lineas ? (

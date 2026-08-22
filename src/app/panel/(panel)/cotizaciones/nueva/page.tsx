@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 
 import FormularioCotizacion from "@/components/panel/FormularioCotizacion";
 import { crearCotizacion } from "@/lib/panel/cotizaciones";
-import { listarClientesPanel, listarProductosParaCotizar } from "@/lib/panel/consultas";
+import { listarClientesParaSelector, listarProductosParaCotizar } from "@/lib/panel/consultas";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 export default async function NuevaCotizacionPage() {
   const cliente = await createClient();
   const [clientes, productos] = await Promise.all([
-    listarClientesPanel(cliente),
+    listarClientesParaSelector(cliente),
     listarProductosParaCotizar(cliente),
   ]);
 

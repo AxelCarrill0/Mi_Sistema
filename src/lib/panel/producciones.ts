@@ -69,9 +69,7 @@ export async function crearProduccion(
     .single();
 
   if (errorProduccion) {
-    return {
-      errores: { formulario: `No se pudo crear la producción: ${errorProduccion.message}` },
-    };
+    return { errores: { formulario: "No se pudo crear la producción. Inténtalo de nuevo." } };
   }
 
   await cliente.from("historial_estados_produccion").insert({
@@ -110,7 +108,7 @@ export async function completarProduccion(
   });
 
   if (error) {
-    return { error: error.message };
+    return { error: "No se pudo completar la producción. Inténtalo de nuevo." };
   }
 
   revalidatePath(`/panel/inventario/produccion/${id}`);
@@ -143,7 +141,7 @@ export async function cancelarProduccion(
   });
 
   if (error) {
-    return { error: error.message };
+    return { error: "No se pudo cancelar la producción. Inténtalo de nuevo." };
   }
 
   revalidatePath(`/panel/inventario/produccion/${id}`);

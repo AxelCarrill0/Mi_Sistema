@@ -1,9 +1,12 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import { calcularRango, TAMANO_PAGINA_CATALOGO } from "@/lib/paginacion";
+
 import type {
   CategoriaPublica,
   ColeccionPublica,
   Database,
+  ImagenProductoPublica,
   OrdenProductos,
   ProductoConDetalle,
   ProductoConImagenes,
@@ -16,6 +19,12 @@ export interface FiltrosProductos {
   orden?: OrdenProductos;
   soloDestacados?: boolean;
   limite?: number;
+  pagina?: number;
+}
+
+export interface ResultadoProductosPublicos {
+  productos: ProductoConImagenes[];
+  total: number;
 }
 
 type ClientePublico = SupabaseClient<Database>;
@@ -52,7 +61,13 @@ function obtenerTerminoBusqueda(busqueda: string): string | undefined {
 }
 
 function escaparPatronIlike(termino: string): string {
-  return termino.replace(/%/g, "\\%").replace(/_/g, "\\_");
+  return (
+    termino
+      .replace(/%/g, "\\%")
+      .replace(/_/g, "\\_")
+      // Las comas y paréntesis rompen el parser de filtros .or() de PostgREST.
+      .replace(/[,()]/g, " ")
+  );
 }
 
 export async function listarColeccionesPublicas(
@@ -123,15 +138,20 @@ export async function obtenerCategoriaPublicaPorSlug(
   return data;
 }
 
-export async function listarProductosPublicos(
+type FilaProductoConsulta = Database["public"]["Tables"]["productos"]["Row"] & {
+  imagenes_producto: ImagenProductoPublica[];
+};
+
+function construirConsultaProductos(
   cliente: ClientePublico,
-  filtros: FiltrosProductos = {},
-): Promise<ProductoConImagenes[]> {
+  filtros: FiltrosProductos,
+  opciones?: { count?: "exact" },
+) {
   const termino = filtros.busqueda ? obtenerTerminoBusqueda(filtros.busqueda) : undefined;
 
   let consulta = cliente
     .from("productos")
-    .select("*, imagenes_producto(*)")
+    .select("*, imagenes_producto(*)", opciones)
     .eq("estado_publicacion", "activo");
 
   if (filtros.coleccionId) {
@@ -157,10 +177,24 @@ export async function listarProductosPublicos(
     });
   }
 
-  consulta = consulta.order("orden", {
+  return consulta.order("orden", {
     referencedTable: "imagenes_producto",
     ascending: true,
   });
+}
+
+function mapearProductos(data: FilaProductoConsulta[] | null): ProductoConImagenes[] {
+  return (data ?? []).map((producto) => ({
+    ...producto,
+    imagenes: producto.imagenes_producto,
+  }));
+}
+
+export async function listarProductosPublicos(
+  cliente: ClientePublico,
+  filtros: FiltrosProductos = {},
+): Promise<ProductoConImagenes[]> {
+  let consulta = construirConsultaProductos(cliente, filtros);
 
   if (filtros.limite) {
     consulta = consulta.limit(filtros.limite);
@@ -172,10 +206,27 @@ export async function listarProductosPublicos(
     throw error;
   }
 
-  return (data ?? []).map((producto) => ({
-    ...producto,
-    imagenes: producto.imagenes_producto,
-  }));
+  return mapearProductos(data as FilaProductoConsulta[]);
+}
+
+export async function listarProductosPublicosPaginado(
+  cliente: ClientePublico,
+  filtros: FiltrosProductos = {},
+): Promise<ResultadoProductosPublicos> {
+  const { desde, hasta } = calcularRango(
+    filtros.pagina ?? 1,
+    filtros.limite ?? TAMANO_PAGINA_CATALOGO,
+  );
+
+  const { data, count, error } = await construirConsultaProductos(cliente, filtros, {
+    count: "exact",
+  }).range(desde, hasta);
+
+  if (error) {
+    throw error;
+  }
+
+  return { productos: mapearProductos(data as FilaProductoConsulta[]), total: count ?? 0 };
 }
 
 export async function obtenerProductoPublicoPorSlug(

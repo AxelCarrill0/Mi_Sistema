@@ -20,6 +20,7 @@ export interface VentaDocumento {
   telefono_cliente: string | null;
   email_cliente: string | null;
   direccion_cliente: string | null;
+  identificacion_cliente?: string | null;
   observaciones: string | null;
   creado_en: string;
   total: number;
@@ -37,8 +38,6 @@ interface Props {
 }
 
 export default function DocumentoVenta({ venta, nombreNegocio, numeroWhatsApp }: Props) {
-  // En Ecuador: cálculo fiscal estándar (subtotal, IVA y total)
-  // Subtotal base = total / 1.15 si incluye IVA, o total como base
   const total = venta.total;
 
   return (
@@ -67,7 +66,8 @@ export default function DocumentoVenta({ venta, nombreNegocio, numeroWhatsApp }:
             <strong>Razón Social / Nombre:</strong> {venta.nombre_cliente}
           </div>
           <div>
-            <strong>Identificación (C.I. / RUC):</strong> No registrada
+            <strong>Identificación (C.I. / RUC):</strong>{" "}
+            {venta.identificacion_cliente ?? "No registrada"}
           </div>
           {venta.telefono_cliente && (
             <div>
@@ -114,9 +114,6 @@ export default function DocumentoVenta({ venta, nombreNegocio, numeroWhatsApp }:
 
       <div className="cotizacion-documento__totales">
         <div className="desglose-totales">
-          <p>
-            Subtotal: <strong>{formatearMonedaUSD(total)}</strong>
-          </p>
           <p>
             Total Venta (USD): <strong className="texto-grande">{formatearMonedaUSD(total)}</strong>
           </p>

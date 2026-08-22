@@ -83,7 +83,7 @@ export async function registrarMovimientoInventario(
   });
 
   if (error) {
-    return { errores: { formulario: `No se pudo registrar el movimiento: ${error.message}` } };
+    return { errores: { formulario: "No se pudo registrar el movimiento. Inténtalo de nuevo." } };
   }
 
   revalidatePath("/panel/inventario");

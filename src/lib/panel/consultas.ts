@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import { calcularRango, TAMANO_PAGINA_PANEL, type ResultadoPaginado } from "@/lib/paginacion";
 import type { Database } from "@/lib/supabase/database.types";
 import type {
   HistorialEstadoProduccionPanel,
@@ -108,30 +109,39 @@ export async function obtenerCategoriaPanel(cliente: ClientePanel, id: string) {
   return data;
 }
 
-export async function listarProductosPanel(cliente: ClientePanel): Promise<ProductoPanelListado[]> {
-  const { data, error } = await cliente
+export async function listarProductosPanel(
+  cliente: ClientePanel,
+  opciones: { pagina?: number } = {},
+): Promise<ResultadoPaginado<ProductoPanelListado>> {
+  const { desde, hasta } = calcularRango(opciones.pagina ?? 1, TAMANO_PAGINA_PANEL);
+
+  const { data, count, error } = await cliente
     .from("productos")
-    .select("*, colecciones(id, nombre), categorias(id, nombre)")
-    .order("creado_en", { ascending: false });
+    .select("*, colecciones(id, nombre), categorias(id, nombre)", { count: "exact" })
+    .order("creado_en", { ascending: false })
+    .range(desde, hasta);
 
   if (error) {
     throw error;
   }
 
-  return (data ?? []).map((producto) => ({
-    id: producto.id,
-    codigo_interno: producto.codigo_interno,
-    nombre: producto.nombre,
-    slug: producto.slug,
-    tipo_producto: producto.tipo_producto,
-    precio_base: producto.precio_base,
-    controla_stock: producto.controla_stock,
-    stock_actual: producto.stock_actual,
-    destacado: producto.destacado,
-    estado_publicacion: producto.estado_publicacion,
-    coleccion: producto.colecciones,
-    categoria: producto.categorias,
-  }));
+  return {
+    filas: (data ?? []).map((producto) => ({
+      id: producto.id,
+      codigo_interno: producto.codigo_interno,
+      nombre: producto.nombre,
+      slug: producto.slug,
+      tipo_producto: producto.tipo_producto,
+      precio_base: producto.precio_base,
+      controla_stock: producto.controla_stock,
+      stock_actual: producto.stock_actual,
+      destacado: producto.destacado,
+      estado_publicacion: producto.estado_publicacion,
+      coleccion: producto.colecciones,
+      categoria: producto.categorias,
+    })),
+    total: count ?? 0,
+  };
 }
 
 export async function obtenerProductoPanel(cliente: ClientePanel, id: string) {
@@ -208,7 +218,28 @@ export async function obtenerConfiguracionPanel(
   };
 }
 
-export async function listarClientesPanel(cliente: ClientePanel) {
+export async function listarClientesPanel(
+  cliente: ClientePanel,
+  opciones: { pagina?: number } = {},
+): Promise<ResultadoPaginado<Database["public"]["Tables"]["clientes"]["Row"]>> {
+  const { desde, hasta } = calcularRango(opciones.pagina ?? 1, TAMANO_PAGINA_PANEL);
+
+  const { data, count, error } = await cliente
+    .from("clientes")
+    .select("*", { count: "exact" })
+    .order("nombres")
+    .range(desde, hasta);
+
+  if (error) {
+    throw error;
+  }
+
+  return { filas: data ?? [], total: count ?? 0 };
+}
+
+// Para los selectores de cliente de cotizaciones, pedidos y ventas se necesita
+// el listado completo, sin paginar.
+export async function listarClientesParaSelector(cliente: ClientePanel) {
   const { data, error } = await cliente.from("clientes").select("*").order("nombres");
 
   if (error) {
@@ -239,28 +270,35 @@ export interface CotizacionPanelListado {
 
 export async function listarCotizacionesPanel(
   cliente: ClientePanel,
-): Promise<CotizacionPanelListado[]> {
-  const { data, error } = await cliente
+  opciones: { pagina?: number } = {},
+): Promise<ResultadoPaginado<CotizacionPanelListado>> {
+  const { desde, hasta } = calcularRango(opciones.pagina ?? 1, TAMANO_PAGINA_PANEL);
+
+  const { data, count, error } = await cliente
     .from("cotizaciones")
-    .select("*, cotizaciones_detalle(precio_unitario, cantidad)")
-    .order("creado_en", { ascending: false });
+    .select("*, cotizaciones_detalle(precio_unitario, cantidad)", { count: "exact" })
+    .order("creado_en", { ascending: false })
+    .range(desde, hasta);
 
   if (error) {
     throw error;
   }
 
-  return (data ?? []).map((cotizacion) => ({
-    id: cotizacion.id,
-    numero: cotizacion.numero,
-    nombre_cliente: cotizacion.nombre_cliente,
-    estado: cotizacion.estado,
-    creado_en: cotizacion.creado_en,
-    total:
-      cotizacion.cotizaciones_detalle?.reduce(
-        (suma, linea) => suma + (linea.precio_unitario ?? 0) * (linea.cantidad ?? 0),
-        0,
-      ) ?? 0,
-  }));
+  return {
+    filas: (data ?? []).map((cotizacion) => ({
+      id: cotizacion.id,
+      numero: cotizacion.numero,
+      nombre_cliente: cotizacion.nombre_cliente,
+      estado: cotizacion.estado,
+      creado_en: cotizacion.creado_en,
+      total:
+        cotizacion.cotizaciones_detalle?.reduce(
+          (suma, linea) => suma + (linea.precio_unitario ?? 0) * (linea.cantidad ?? 0),
+          0,
+        ) ?? 0,
+    })),
+    total: count ?? 0,
+  };
 }
 
 export async function obtenerCotizacionPanel(cliente: ClientePanel, id: string) {
@@ -318,19 +356,20 @@ export async function listarProductosParaCotizar(
 }
 
 export async function obtenerResumenPanel(cliente: ClientePanel): Promise<ResumenPanel> {
-  const [productosActivos, productosBorrador, productosDesactivados] = await Promise.all([
-    contarProductosPorEstado(cliente, "activo"),
-    contarProductosPorEstado(cliente, "borrador"),
-    contarProductosPorEstado(cliente, "desactivado"),
-  ]);
-
   const [
+    productosActivos,
+    productosBorrador,
+    productosDesactivados,
     { count: colecciones },
     { count: categorias },
     { count: pedidosPendientes },
     { count: ventasRealizadas },
     { count: produccionesActivas },
+    { data: configuracion },
   ] = await Promise.all([
+    contarProductosPorEstado(cliente, "activo"),
+    contarProductosPorEstado(cliente, "borrador"),
+    contarProductosPorEstado(cliente, "desactivado"),
     cliente
       .from("colecciones")
       .select("*", { count: "exact", head: true })
@@ -339,13 +378,8 @@ export async function obtenerResumenPanel(cliente: ClientePanel): Promise<Resume
     cliente.from("pedidos").select("*", { count: "exact", head: true }).eq("estado", "pendiente"),
     cliente.from("ventas").select("*", { count: "exact", head: true }),
     cliente.from("producciones").select("*", { count: "exact", head: true }).eq("estado", "activa"),
+    cliente.from("configuracion_negocio").select("umbral_stock_bajo").eq("id", 1).maybeSingle(),
   ]);
-
-  const { data: configuracion } = await cliente
-    .from("configuracion_negocio")
-    .select("umbral_stock_bajo")
-    .eq("id", 1)
-    .maybeSingle();
 
   const umbralStockBajo = configuracion?.umbral_stock_bajo ?? LIMITE_STOCK_BAJO;
 
@@ -375,48 +409,97 @@ export async function obtenerResumenPanel(cliente: ClientePanel): Promise<Resume
   };
 }
 
-export async function listarPedidosPanel(cliente: ClientePanel): Promise<PedidoPanelListado[]> {
-  const { data, error } = await cliente
+export interface ListadoPedidosPanel extends ResultadoPaginado<PedidoPanelListado> {
+  conteos: { todos: number; pendiente: number; entregado: number; cancelado: number };
+}
+
+export async function listarPedidosPanel(
+  cliente: ClientePanel,
+  opciones: { estado?: string; pagina?: number } = {},
+): Promise<ListadoPedidosPanel> {
+  const { desde, hasta } = calcularRango(opciones.pagina ?? 1, TAMANO_PAGINA_PANEL);
+
+  let consulta = cliente
     .from("pedidos")
-    .select("*, detalles_pedido(precio_unitario, cantidad), ventas(id)")
+    .select("*, detalles_pedido(precio_unitario, cantidad), ventas(id)", { count: "exact" })
     .order("creado_en", { ascending: false });
+
+  if (opciones.estado) {
+    consulta = consulta.eq("estado", opciones.estado);
+  }
+
+  const { data, count, error } = await consulta.range(desde, hasta);
 
   if (error) {
     throw error;
   }
 
-  const { data: pagos, error: errorPagos } = await cliente
-    .from("pagos")
-    .select("monto, pedido_id, venta_id");
+  const [conteoTodos, conteoPendiente, conteoEntregado, conteoCancelado] = await Promise.all([
+    cliente.from("pedidos").select("*", { count: "exact", head: true }),
+    cliente.from("pedidos").select("*", { count: "exact", head: true }).eq("estado", "pendiente"),
+    cliente.from("pedidos").select("*", { count: "exact", head: true }).eq("estado", "entregado"),
+    cliente.from("pedidos").select("*", { count: "exact", head: true }).eq("estado", "cancelado"),
+  ]);
+
+  const pedidosPagina = data ?? [];
+  const pedidoIds = pedidosPagina.map((pedido) => pedido.id);
+  const ventaIds = pedidosPagina
+    .map((pedido) => pedido.ventas?.id)
+    .filter((id): id is string => Boolean(id));
+
+  // Solo se consultan los pagos de los pedidos (y ventas relacionadas) de la
+  // página actual, en lugar de descargar toda la tabla.
+  const { data: pagos, error: errorPagos } = pedidoIds.length
+    ? await cliente
+        .from("pagos")
+        .select("monto, pedido_id, venta_id")
+        .or(
+          `pedido_id.in.(${pedidoIds.join(",")})${
+            ventaIds.length ? `,venta_id.in.(${ventaIds.join(",")})` : ""
+          }`,
+        )
+    : {
+        data: [] as { monto: number | null; pedido_id: string | null; venta_id: string | null }[],
+        error: null,
+      };
 
   if (errorPagos) {
     throw errorPagos;
   }
 
-  return (data ?? []).map((pedido) => {
-    const total =
-      pedido.detalles_pedido?.reduce(
-        (suma, linea) => suma + (linea.precio_unitario ?? 0) * (linea.cantidad ?? 0),
-        0,
-      ) ?? 0;
-    const ventaId = pedido.ventas?.id ?? null;
-    const abonos =
-      pagos
-        ?.filter((p) => p.pedido_id === pedido.id || (ventaId && p.venta_id === ventaId))
-        .reduce((suma, p) => suma + (p.monto ?? 0), 0) ?? 0;
+  return {
+    filas: pedidosPagina.map((pedido) => {
+      const total =
+        pedido.detalles_pedido?.reduce(
+          (suma, linea) => suma + (linea.precio_unitario ?? 0) * (linea.cantidad ?? 0),
+          0,
+        ) ?? 0;
+      const ventaId = pedido.ventas?.id ?? null;
+      const abonos =
+        (pagos ?? [])
+          .filter((p) => p.pedido_id === pedido.id || (ventaId && p.venta_id === ventaId))
+          .reduce((suma, p) => suma + (p.monto ?? 0), 0) ?? 0;
 
-    return {
-      id: pedido.id,
-      numero: pedido.numero,
-      nombre_cliente: pedido.nombre_cliente,
-      estado: pedido.estado as "pendiente" | "entregado" | "cancelado",
-      creado_en: pedido.creado_en,
-      total,
-      abonos,
-      saldo: Math.max(0, total - abonos),
-      venta_id: pedido.ventas?.id ?? null,
-    };
-  });
+      return {
+        id: pedido.id,
+        numero: pedido.numero,
+        nombre_cliente: pedido.nombre_cliente,
+        estado: pedido.estado as "pendiente" | "entregado" | "cancelado",
+        creado_en: pedido.creado_en,
+        total,
+        abonos,
+        saldo: Math.max(0, total - abonos),
+        venta_id: pedido.ventas?.id ?? null,
+      };
+    }),
+    total: count ?? 0,
+    conteos: {
+      todos: conteoTodos.count ?? 0,
+      pendiente: conteoPendiente.count ?? 0,
+      entregado: conteoEntregado.count ?? 0,
+      cancelado: conteoCancelado.count ?? 0,
+    },
+  };
 }
 
 export interface DetallePedidoConProducto {
@@ -569,47 +652,76 @@ export async function obtenerPedidoPanel(
   };
 }
 
-export async function listarVentasPanel(cliente: ClientePanel): Promise<VentaPanelListado[]> {
-  const { data, error } = await cliente
+export async function listarVentasPanel(
+  cliente: ClientePanel,
+  opciones: { pagina?: number } = {},
+): Promise<ResultadoPaginado<VentaPanelListado>> {
+  const { desde, hasta } = calcularRango(opciones.pagina ?? 1, TAMANO_PAGINA_PANEL);
+
+  const { data, count, error } = await cliente
     .from("ventas")
-    .select("*, detalles_venta(precio_unitario, cantidad), pedidos(id, numero)")
-    .order("creado_en", { ascending: false });
+    .select("*, detalles_venta(precio_unitario, cantidad), pedidos(id, numero)", {
+      count: "exact",
+    })
+    .order("creado_en", { ascending: false })
+    .range(desde, hasta);
 
   if (error) {
     throw error;
   }
 
-  const { data: pagos, error: errorPagos } = await cliente
-    .from("pagos")
-    .select("monto, pedido_id, venta_id");
+  const ventasPagina = data ?? [];
+  const ventaIds = ventasPagina.map((venta) => venta.id);
+  const pedidoIds = ventasPagina
+    .map((venta) => venta.pedidos?.id)
+    .filter((id): id is string => Boolean(id));
+
+  // Solo se consultan los pagos de las ventas (y pedidos relacionados) de la
+  // página actual, en lugar de descargar toda la tabla.
+  const { data: pagos, error: errorPagos } = ventaIds.length
+    ? await cliente
+        .from("pagos")
+        .select("monto, pedido_id, venta_id")
+        .or(
+          `venta_id.in.(${ventaIds.join(",")})${
+            pedidoIds.length ? `,pedido_id.in.(${pedidoIds.join(",")})` : ""
+          }`,
+        )
+    : {
+        data: [] as { monto: number | null; pedido_id: string | null; venta_id: string | null }[],
+        error: null,
+      };
 
   if (errorPagos) {
     throw errorPagos;
   }
 
-  return (data ?? []).map((venta) => {
-    const total =
-      venta.detalles_venta?.reduce(
-        (suma, linea) => suma + (linea.precio_unitario ?? 0) * (linea.cantidad ?? 0),
-        0,
-      ) ?? 0;
-    const pedidoId = venta.pedidos?.id ?? null;
-    const abonos =
-      pagos
-        ?.filter((p) => p.venta_id === venta.id || (pedidoId && p.pedido_id === pedidoId))
-        .reduce((suma, p) => suma + (p.monto ?? 0), 0) ?? 0;
+  return {
+    filas: ventasPagina.map((venta) => {
+      const total =
+        venta.detalles_venta?.reduce(
+          (suma, linea) => suma + (linea.precio_unitario ?? 0) * (linea.cantidad ?? 0),
+          0,
+        ) ?? 0;
+      const pedidoId = venta.pedidos?.id ?? null;
+      const abonos =
+        (pagos ?? [])
+          .filter((p) => p.venta_id === venta.id || (pedidoId && p.pedido_id === pedidoId))
+          .reduce((suma, p) => suma + (p.monto ?? 0), 0) ?? 0;
 
-    return {
-      id: venta.id,
-      numero: venta.numero,
-      nombre_cliente: venta.nombre_cliente,
-      creado_en: venta.creado_en,
-      total,
-      abonos,
-      saldo: Math.max(0, total - abonos),
-      pedido_numero: venta.pedidos?.numero ?? null,
-    };
-  });
+      return {
+        id: venta.id,
+        numero: venta.numero,
+        nombre_cliente: venta.nombre_cliente,
+        creado_en: venta.creado_en,
+        total,
+        abonos,
+        saldo: Math.max(0, total - abonos),
+        pedido_numero: venta.pedidos?.numero ?? null,
+      };
+    }),
+    total: count ?? 0,
+  };
 }
 
 export interface DetalleVentaConProducto {
@@ -632,6 +744,7 @@ export interface VentaPanelDetallada {
   telefono_cliente: string | null;
   email_cliente: string | null;
   direccion_cliente: string | null;
+  identificacion_cliente: string | null;
   observaciones: string | null;
   creado_en: string;
   actualizado_en: string;
@@ -653,7 +766,8 @@ export async function obtenerVentaPanel(
       `
       *,
       detalles_venta(*, productos(id, nombre, codigo_interno)),
-      pedidos(id, numero)
+      pedidos(id, numero),
+      clientes(identificacion)
     `,
     )
     .eq("id", id)
@@ -702,6 +816,7 @@ export async function obtenerVentaPanel(
     telefono_cliente: data.telefono_cliente,
     email_cliente: data.email_cliente,
     direccion_cliente: data.direccion_cliente,
+    identificacion_cliente: data.clientes?.identificacion ?? null,
     observaciones: data.observaciones,
     creado_en: data.creado_en,
     actualizado_en: data.actualizado_en,

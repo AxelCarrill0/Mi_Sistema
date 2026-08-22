@@ -5,6 +5,10 @@ import FormularioIngreso from "@/components/panel/FormularioIngreso";
 
 export const metadata: Metadata = {
   title: "Ingreso",
+  robots: {
+    index: false,
+    follow: false,
+  },
 };
 
 export default function PaginaIngreso() {

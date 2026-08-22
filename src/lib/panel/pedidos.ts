@@ -151,43 +151,58 @@ export async function crearPedido(
     .select("id")
     .single();
 
-  if (errorPedido) {
-    return { errores: { formulario: `No se pudo crear el pedido: ${errorPedido.message}` } };
+  if (errorPedido || !pedido) {
+    return { errores: { formulario: "No se pudo crear el pedido. Inténtalo de nuevo." } };
   }
 
-  // Insertar historial inicial
-  await cliente.from("historial_estados_pedido").insert({
-    pedido_id: pedido.id,
-    estado_anterior: null,
-    estado_nuevo: "pendiente",
-    perfil_id: user?.id ?? null,
-    motivo: cotizacionId ? "Creado a partir de cotización" : "Pedido creado",
-  });
-
-  const detalle = lineas.descripciones.map((descripcion, indice) => ({
-    pedido_id: pedido.id,
-    producto_id: lineas.productos[indice],
-    descripcion,
-    cantidad: lineas.cantidades[indice],
-    precio_unitario: Math.round(lineas.precios[indice] * 100) / 100,
-  }));
-
-  const { error: errorDetalle } = await cliente.from("detalles_pedido").insert(detalle);
-
-  if (errorDetalle) {
-    return { errores: { formulario: "No se pudieron guardar las líneas del pedido." } };
-  }
-
-  // Si se ingresó un abono inicial
-  if (abonoInicial > 0) {
-    await cliente.from("pagos").insert({
+  // Las tablas hijas (historial, detalles, abono) usan ON DELETE CASCADE sobre
+  // pedidos: si un paso intermedio falla, se elimina el pedido recién creado y
+  // no queda un documento a medias.
+  try {
+    const { error: errorHistorial } = await cliente.from("historial_estados_pedido").insert({
       pedido_id: pedido.id,
-      monto: Math.round(abonoInicial * 100) / 100,
-      metodo_pago: metodoPago as "efectivo" | "transferencia" | "deposito" | "tarjeta" | "otro",
-      referencia: referenciaAbono,
-      notas: "Abono inicial registrado con el pedido",
+      estado_anterior: null,
+      estado_nuevo: "pendiente",
       perfil_id: user?.id ?? null,
+      motivo: cotizacionId ? "Creado a partir de cotización" : "Pedido creado",
     });
+
+    if (errorHistorial) {
+      throw errorHistorial;
+    }
+
+    const detalle = lineas.descripciones.map((descripcion, indice) => ({
+      pedido_id: pedido.id,
+      producto_id: lineas.productos[indice],
+      descripcion,
+      cantidad: lineas.cantidades[indice],
+      precio_unitario: Math.round(lineas.precios[indice] * 100) / 100,
+    }));
+
+    const { error: errorDetalle } = await cliente.from("detalles_pedido").insert(detalle);
+
+    if (errorDetalle) {
+      throw errorDetalle;
+    }
+
+    // Si se ingresó un abono inicial (siempre el último paso)
+    if (abonoInicial > 0) {
+      const { error: errorAbono } = await cliente.from("pagos").insert({
+        pedido_id: pedido.id,
+        monto: Math.round(abonoInicial * 100) / 100,
+        metodo_pago: metodoPago as "efectivo" | "transferencia" | "deposito" | "tarjeta" | "otro",
+        referencia: referenciaAbono,
+        notas: "Abono inicial registrado con el pedido",
+        perfil_id: user?.id ?? null,
+      });
+
+      if (errorAbono) {
+        throw errorAbono;
+      }
+    }
+  } catch {
+    await cliente.from("pedidos").delete().eq("id", pedido.id);
+    return { errores: { formulario: "No se pudo crear el pedido. Inténtalo de nuevo." } };
   }
 
   revalidatePath("/panel/pedidos");
@@ -247,7 +262,7 @@ export async function cambiarEstadoPedido(
     );
 
     if (errorConversion) {
-      return { error: errorConversion.message };
+      return { error: "No se pudo marcar el pedido como entregado. Inténtalo de nuevo." };
     }
 
     revalidatePath(`/panel/pedidos/${id}`);
@@ -266,7 +281,7 @@ export async function cambiarEstadoPedido(
       .eq("id", id);
 
     if (errorUpdate) {
-      return { error: errorUpdate.message };
+      return { error: "No se pudo actualizar el estado del pedido. Inténtalo de nuevo." };
     }
 
     await cliente.from("historial_estados_pedido").insert({

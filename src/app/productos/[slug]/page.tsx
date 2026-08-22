@@ -1,12 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { cache } from "react";
 
 import BotonWhatsApp from "@/components/publicos/BotonWhatsApp";
 import GaleriaProducto from "@/components/publicos/GaleriaProducto";
 import { obtenerProductoPublicoPorSlug } from "@/lib/catalogo/consultas";
 import { formatearPrecio, obtenerMostrarPreciosPublicos } from "@/lib/catalogo/configuracion";
 import { obtenerEstadoDisponibilidad } from "@/lib/catalogo/disponibilidad";
+import { obtenerOrigenActual } from "@/lib/catalogo/origen";
 import { construirUrlProducto } from "@/lib/catalogo/whatsapp";
 import { obtenerUrlPublicaImagen } from "@/lib/catalogo/imagenes";
 import { createClient } from "@/lib/supabase/server";
@@ -15,17 +17,26 @@ interface Props {
   params: Promise<{ slug: string }>;
 }
 
+// Comparte el resultado entre la página y generateMetadata dentro de la misma
+// petición, evitando consultar el producto dos veces.
+const obtenerProducto = cache(async (slug: string) => {
+  const cliente = await createClient();
+  return obtenerProductoPublicoPorSlug(cliente, slug);
+});
+
 export default async function ProductoPage({ params }: Props) {
   const { slug } = await params;
-  const cliente = await createClient();
-  const producto = await obtenerProductoPublicoPorSlug(cliente, slug);
+  const [producto, mostrarPrecios] = await Promise.all([
+    obtenerProducto(slug),
+    obtenerMostrarPreciosPublicos(),
+  ]);
 
   if (!producto) {
     notFound();
   }
 
   const disponibilidad = obtenerEstadoDisponibilidad(producto);
-  const precioVisible = (await obtenerMostrarPreciosPublicos()) && producto.precio_base !== null;
+  const precioVisible = mostrarPrecios && producto.precio_base !== null;
 
   return (
     <article className="detalle-producto">
@@ -117,9 +128,8 @@ export default async function ProductoPage({ params }: Props) {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const cliente = await createClient();
-  const producto = await obtenerProductoPublicoPorSlug(cliente, slug);
-  const urlProducto = construirUrlProducto(slug);
+  const [producto, origen] = await Promise.all([obtenerProducto(slug), obtenerOrigenActual()]);
+  const urlProducto = construirUrlProducto(slug, origen) ?? undefined;
   const imagenPrincipal = producto?.imagenes[0];
   const urlImagen = imagenPrincipal ? obtenerUrlPublicaImagen(imagenPrincipal.ruta_storage) : null;
 
