@@ -5,11 +5,11 @@ const enlaces = [
   { href: "/colecciones", etiqueta: "Colecciones" },
 ];
 
-export default function PiePagina() {
+export default function PiePagina({ nombreNegocio }: { nombreNegocio: string }) {
   return (
     <footer className="pie">
       <div className="pie__contenedor">
-        <div className="pie__marca">FutureLife</div>
+        <div className="pie__marca">{nombreNegocio}</div>
         <p className="pie__texto">
           Artículos de madera y decoración hechos a mano, con calidez y calidad artesanal.
         </p>
@@ -23,7 +23,7 @@ export default function PiePagina() {
           </ul>
         </nav>
         <p className="pie__nota">
-          © {new Date().getFullYear()} FutureLife. Artículos de madera y decoración.
+          © {new Date().getFullYear()} {nombreNegocio}. Artículos de madera y decoración.
         </p>
       </div>
     </footer>

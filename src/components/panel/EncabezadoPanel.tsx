@@ -9,6 +9,7 @@ import type { RolPanel } from "@/lib/panel/tipos";
 interface Props {
   email: string;
   rol: RolPanel;
+  nombreNegocio: string;
 }
 
 const ETIQUETA_ROL: Record<RolPanel, string> = {
@@ -48,7 +49,7 @@ const gruposNavegacion = [
   },
 ];
 
-export default function EncabezadoPanel({ email, rol }: Props) {
+export default function EncabezadoPanel({ email, rol, nombreNegocio }: Props) {
   const ruta = usePathname();
 
   return (
@@ -58,7 +59,7 @@ export default function EncabezadoPanel({ email, rol }: Props) {
           <Link href="/panel" className="panel-encabezado__marca">
             <span className="panel-encabezado__marca-punto" aria-hidden="true" />
             <span>
-              Panel <strong>FutureLife</strong>
+              Panel <strong>{nombreNegocio}</strong>
             </span>
           </Link>
           <div className="panel-encabezado__cuenta">

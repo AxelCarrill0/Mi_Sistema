@@ -9,14 +9,14 @@ const enlaces = [
   { href: "/colecciones", etiqueta: "Colecciones" },
 ];
 
-export default function Navegacion() {
+export default function Navegacion({ nombreNegocio }: { nombreNegocio: string }) {
   const ruta = usePathname();
 
   return (
     <header className="navegacion">
       <div className="navegacion__contenedor">
         <Link href="/" className="navegacion__marca">
-          <span className="navegacion__marca-texto">FutureLife</span>
+          <span className="navegacion__marca-texto">{nombreNegocio}</span>
         </Link>
         <nav aria-label="Navegación principal">
           <ul className="navegacion__lista">

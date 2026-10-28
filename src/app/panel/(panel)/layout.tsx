@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 
 import EncabezadoPanel from "@/components/panel/EncabezadoPanel";
 import { obtenerUsuarioAutorizado } from "@/lib/panel/autorizacion";
+import { obtenerNombreNegocio } from "@/lib/catalogo/configuracion";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
@@ -24,9 +25,11 @@ export default async function PanelLayout({
     redirect("/panel/ingreso");
   }
 
+  const nombreNegocio = await obtenerNombreNegocio();
+
   return (
     <div className="panel">
-      <EncabezadoPanel email={usuario.email} rol={usuario.rol} />
+      <EncabezadoPanel email={usuario.email} rol={usuario.rol} nombreNegocio={nombreNegocio} />
       {children}
     </div>
   );

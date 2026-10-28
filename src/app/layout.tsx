@@ -3,6 +3,7 @@ import { Manrope } from "next/font/google";
 
 import "./globals.css";
 import MarcoPublico from "@/components/publicos/MarcoPublico";
+import { obtenerNombreNegocio } from "@/lib/catalogo/configuracion";
 
 const manrope = Manrope({
   subsets: ["latin"],
@@ -21,15 +22,17 @@ export const metadata: Metadata = {
   description: "Catálogo de artículos de madera y decoración.",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const nombreNegocio = await obtenerNombreNegocio();
+
   return (
     <html lang="es">
       <body className={manrope.variable}>
-        <MarcoPublico>{children}</MarcoPublico>
+        <MarcoPublico nombreNegocio={nombreNegocio}>{children}</MarcoPublico>
       </body>
     </html>
   );
